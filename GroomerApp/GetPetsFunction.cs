@@ -11,6 +11,9 @@ using GroomerDB.Model;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Collections.Generic;
+using GroomerApp.dto;
+using CsvHelper;
+using System.Globalization;
 
 namespace GroomerApp
 {
@@ -43,8 +46,32 @@ namespace GroomerApp
                 .Where(p => p.Name.Contains(name))
                 .ToListAsync();
 
+            var petDto = pets.Select(p => new PetDto
+            {
+                PetId = p.Id,
+                Name = p.Name,
+                Animal = p.Type.Animal,
+                Breed = p.Type.Breed,
+                Pattern = p.Pattern,
+                OwnerFirstName = p.Owner.FirstName,
+                OwnerLastName = p.Owner.LastName
+            });
 
-            return new OkObjectResult(string.Join(Environment.NewLine, pets.Select(p=> p.Name +" the "+ p.Type.Animal + ", "+ p.Owner.FirstName)));
+            await using (var writer = new StringWriter())
+            {
+                await using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                {
+                    csv.Configuration.RegisterClassMap<PetClassMap>();
+
+                    await csv.WriteRecordsAsync(petDto);
+
+                    await csv.FlushAsync();
+                }
+
+                responseMessage = writer.ToString();
+            }
+
+            return new OkObjectResult(responseMessage);
         }
     }
 }
