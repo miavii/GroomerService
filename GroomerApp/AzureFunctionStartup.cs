@@ -15,8 +15,9 @@ namespace GroomerApp
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            string connectionString = Environment.GetEnvironmentVariable("sqldb_connection");
             builder.Services.AddDbContext<miadatabaseContext>(option =>
-            option.UseSqlServer("sqldb_connection"));
+            option.UseSqlServer(connectionString));
         }
     }
 }
